@@ -12,18 +12,18 @@ A ROS-based autonomous mobile robot navigation system that uses computer vision 
 - Muhammet Müftüoğlu
 
 ## 📋 Table of Contents
-- [Overview](#overview)
-- [Features](#features)
-- [System Architecture](#system-architecture)
-- [Hardware Specifications](#hardware-specifications)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Project Structure](#project-structure)
-- [SLAM Comparison Results](#slam-comparison-results)
-- [Traffic Sign Detection](#traffic-sign-detection)
-- [Demo Videos](#demo-videos)
-- [Troubleshooting](#troubleshooting)
-- [References](#references)
+- [Overview](#-overview)
+- [Features](#-features)
+- [System Architecture](#️-system-architecture)
+- [Hardware Specifications](#-hardware-specifications)
+- [Installation](#-installation)
+- [Usage](#-usage)
+- [Project Structure](#-project-structure)
+- [SLAM Comparison Results](#-slam-comparison-results)
+- [Traffic Sign Detection](#-traffic-sign-detection)
+- [Demo Videos](#-demo-videos)
+- [Troubleshooting](#-troubleshooting)
+- [References](#-references)
 
 ## 🎯 Overview
 
@@ -31,7 +31,7 @@ This project implements an autonomous navigation system for a Pioneer 3-AT mobil
 
 - **Computer Vision** - Detects traffic signs (turn left, turn right, go straight, park) using OpenCV template matching
 - **SLAM Algorithms** - Creates 2D occupancy grid maps using GMapping and Hector SLAM
-- **Navigation Stack** - Uses ROS move_base for path planning and obstacle avoidance
+- **Reactive Navigation** - Wall-following algorithm with LiDAR-based obstacle avoidance and traffic sign control
 - **Sensor Fusion** - Integrates dual LiDAR sensors, RGB camera, and wheel odometry
 
 ### Project Objectives
@@ -71,33 +71,43 @@ This project implements an autonomous navigation system for a Pioneer 3-AT mobil
 │ F + R  │        │ (12.3 MP)    │  │        │
 └───┬────┘        └──────┬───────┘  └───┬────┘
     │                    │              │
+    │ /laser_scan        │ /image_raw   │
+    │                    │              │
     │            ┌───────▼──────────┐   │
-    │            │ Traffic Detector │   │
+    ├───────────>│ Traffic Detector │   │
     │            │  (OpenCV)        │   │
     │            └───────┬──────────┘   │
     │                    │              │
-    └────────────┬───────┴──────────────┘
-                 │
-        ┌────────▼─────────┐
-        │   SLAM Engines   │
-        │  GMapping/Hector │
-        └────────┬─────────┘
-                 │
-        ┌────────▼─────────┐
-        │   move_base      │
-        │  (Path Planner)  │
-        └────────┬─────────┘
-                 │
-        ┌────────▼─────────┐
-        │   Navigator      │
-        │  (Control Logic) │
-        └────────┬─────────┘
-                 │
-        ┌────────▼─────────┐
-        │  cmd_vel         │
-        │  (Robot Motion)  │
-        └──────────────────┘
+    │                    │ /traffic_sign│
+    │                    │              │
+    ├──────────>┌───────▼────┐         │
+    │           │    SLAM    │         │
+    │           │  Gmapping/ │         │
+    │           │   Hector   │         │
+    │           └──────┬─────┘         │
+    │                  │ /map          │
+    │                  │               │
+    └──────────>┌──────▼─────────┐    │
+                │   Navigator    │◄───┤
+                │(Wall-Following)│◄───┘ /odom
+                └────────┬───────┘
+                         │ /sim_p3at/cmd_vel
+                ┌────────▼─────────┐
+                │  Robot Motion    │
+                └──────────────────┘
 ```
+
+**Architecture Notes:**
+- **LiDAR** provides data to three components in parallel:
+  - SLAM Engines (for mapping)
+  - Navigator (for wall-following & obstacle avoidance)
+  - Traffic Detector (for context)
+- **Navigator** receives inputs from:
+  - LiDAR (`/front_laser/scan`) - obstacle detection
+  - Traffic signs (`/traffic_sign`) - navigation commands
+  - Odometry (`/odom`) - position tracking
+- Navigator uses **wall-following algorithm** with direct sensor feedback (no path planner)
+- SLAM provides mapping for visualization; navigator operates reactively
 
 ## 🤖 Hardware Specifications
 
@@ -152,7 +162,7 @@ sudo apt install ros-noetic-gazebo-ros-pkgs
 sudo apt install ros-noetic-navigation
 sudo apt install ros-noetic-slam-gmapping
 sudo apt install ros-noetic-hector-slam
-sudo apt install ros-noetic-move-base
+sudo apt install ros-noetic-move-base  # Required by launch file but not used by navigator
 sudo apt install ros-noetic-amcl
 sudo apt install ros-noetic-map-server
 
@@ -210,13 +220,15 @@ rosrun amr-ros-config traffic_detector_2.py
 
 #### Terminal 4: Launch Navigation Stack
 ```bash
-roslaunch amr-ros-config traffic_exploration.launch
+roslaunch traffic_exploration.launch
 ```
 
 #### Terminal 5: Launch Hector SLAM
 ```bash
 roslaunch amr-ros-config slam_hector.launch
 ```
+
+*Note: In RViz, Add -> Map and use topic `/map` to visualize mapping*
 
 #### Terminal 6: Start Autonomous Navigator
 ```bash
@@ -234,42 +246,72 @@ rosrun amr-ros-config coordinate_viewer.py
 
 **See detailed instructions in:** `Files/gMapping/How to use codes.txt`
 
-#### Terminal 1: Launch World
+#### Terminal 1: Launch Gazebo World and Robot
 ```bash
 roslaunch amr-ros-config project_world.launch
 ```
 
-#### Terminal 2: Launch GMapping SLAM
+#### Terminal 2: Reset Robot Position
+```bash
+rosrun amr-ros-config reset_robot.py
+```
+
+#### Terminal 3: Start Traffic Sign Detector
+```bash
+rosrun amr-ros-config traffic_detector_2.py
+```
+
+#### Terminal 4: Launch GMapping SLAM
 ```bash
 roslaunch amr-ros-config slam_gmapping.launch
 ```
 
-#### Terminal 3-6: Same as Quick Start (reset, detector, navigator, etc.)
+*Note: In RViz, Add -> Map and use topic `/map` to visualize mapping*
 
-#### Save Map
+#### Terminal 5: Start Autonomous Navigator
+```bash
+rosrun amr-ros-config navigator_3.py
+```
+
+#### Terminal 6 (Optional): Save Map
 ```bash
 rosrun map_server map_saver -f gmapping_map
 ```
 
 ---
 
-### Option B: Using Hector SLAM
+### Option B: Using Hector SLAM (Simplified - Without Navigation Stack)
 
 **See detailed instructions in:** `Files/Hector/How to use codes.txt`
 
-#### Terminal 1: Launch World
+#### Terminal 1: Launch Gazebo World and Robot
 ```bash
 roslaunch amr-ros-config project_world.launch
 ```
 
-#### Terminal 2: Launch Hector SLAM
+#### Terminal 2: Reset Robot Position
+```bash
+rosrun amr-ros-config reset_robot.py
+```
+
+#### Terminal 3: Start Traffic Sign Detector
+```bash
+rosrun amr-ros-config traffic_detector_2.py
+```
+
+#### Terminal 4: Launch Hector SLAM
 ```bash
 roslaunch amr-ros-config slam_hector.launch
 ```
 
-#### Terminal 3-6: Same as Quick Start
+*Note: In RViz, Add -> Map and use topic `/map` to visualize mapping*
 
-#### Save Map
+#### Terminal 5: Start Autonomous Navigator
+```bash
+rosrun amr-ros-config navigator_3.py
+```
+
+#### Terminal 6 (Optional): Save Map
 ```bash
 rosrun map_server map_saver -f hector_map
 ```
@@ -298,6 +340,8 @@ traffic-sign-robot-navigation/
 ├── Hector_Error.jpeg              # Hector error logs
 │
 └── Files/
+    ├── office.jpg                 # AWS Office environment reference image
+    │
     ├── amr-ros-config/            # Main ROS package
     │   ├── launch/                # Launch files
     │   │   ├── project_world.launch         # Main world + robot
@@ -322,14 +366,16 @@ traffic-sign-robot-navigation/
     │   │   └── urdf/
     │   │       └── pioneer3at_lidar_rgb.urdf
     │   │
-    │   └── gazebo/               # Gazebo world and models
-    │       ├── final_Added.world           # Main simulation world
-    │       └── models/                     # 44 models (signs, furniture, objects)
-    │           ├── sign_left/
-    │           ├── sign_right/
-    │           ├── sign_straight/
-    │           ├── sign_park/
-    │           └── ... (furniture, objects)
+    │   └── gazebo/                # Gazebo simulation environment
+    │       ├── final_Added.world           # Main simulation world (1.2 MB)
+    │       ├── models/                     # 43 models total
+    │       │   ├── sign_left/              # Traffic signs (4)
+    │       │   ├── sign_right/
+    │       │   ├── sign_straight/
+    │       │   ├── sign_park/
+    │       │   └── ... (39 office objects: furniture, actors, etc.)
+    │       ├── map/                        # Ground truth maps
+    │       └── media/                      # Textures and materials
     │
     ├── Signs_Models/             # Standalone traffic sign models
     │   ├── sign_left/
@@ -337,13 +383,22 @@ traffic-sign-robot-navigation/
     │   ├── sign_straight/
     │   └── sign_park/
     │
-    ├── gMapping/                 # GMapping specific files
+    ├── gMapping/                 # GMapping-specific implementation
     │   ├── How to use codes.txt
-    │   └── ... (scripts and configs)
+    │   ├── navigator_3.py
+    │   ├── traffic_detector_2.py
+    │   ├── coordinate_viewer.py
+    │   ├── reset_robot.py
+    │   └── slam_gmapping.launch
     │
-    └── Hector/                   # Hector specific files
+    └── Hector/                   # Hector-specific implementation
         ├── How to use codes.txt
-        └── ... (scripts and configs)
+        ├── navigator_3.py
+        ├── traffic_detector_2.py
+        ├── coordinate_viewer.py
+        ├── reset_robot.py
+        ├── slam_hector.launch
+        └── traffic_exploration.launch
 ```
 
 ## 📊 SLAM Comparison Results
@@ -497,9 +552,9 @@ echo "export GAZEBO_MODEL_PATH=~/.gazebo/models:$GAZEBO_MODEL_PATH" >> ~/.bashrc
 #### Issue: "Traffic sign detector shows no window"
 **Solution:**
 ```bash
-# Install OpenCV with GUI support
-pip3 uninstall opencv-python
-pip3 install opencv-python-headless==false
+# Install OpenCV with GUI support (remove headless version)
+pip3 uninstall opencv-python-headless
+pip3 install opencv-python
 pip3 install opencv-contrib-python
 ```
 
@@ -538,9 +593,9 @@ pip3 install opencv-contrib-python
 - [OpenCV Template Matching](https://docs.opencv.org/4.x/d4/dc6/tutorial_py_template_matching.html)
 
 ### Papers & Documentation
-- GMapping: Grisetti, G., et al. "Improved Techniques for Grid Mapping with Rao-Blackwellized Particle Filters" (2007)
-- Hector SLAM: Kohlbrecher, S., et al. "A Flexible and Scalable SLAM System with Full 3D Motion Estimation" (2011)
-- Pioneer 3-AT: [ROS Pioneer 3-AT Documentation](https://robots.ros.org/pioneer-3-at/)
+- **GMapping**: Grisetti, G., Stachniss, C., & Burgard, W. (2007). "Improved Techniques for Grid Mapping with Rao-Blackwellized Particle Filters." *IEEE Transactions on Robotics*, 23(1), 34-46. [Paper](https://ieeexplore.ieee.org/document/4084563/)
+- **Hector SLAM**: Kohlbrecher, S., von Stryk, O., Meyer, J., & Klingauf, U. (2011). "A Flexible and Scalable SLAM System with Full 3D Motion Estimation." *IEEE International Symposium on Safety, Security, and Rescue Robotics (SSRR)*. [ROS Wiki](http://wiki.ros.org/hector_slam)
+- **Pioneer 3-AT**: [ROS Pioneer 3-AT Documentation](https://robots.ros.org/pioneer-3-at/)
 
 ## 📄 License
 
