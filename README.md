@@ -105,16 +105,29 @@ This project implements an autonomous navigation system for a Pioneer 3-AT mobil
 ```
 
 **Architecture Notes:**
-- **LiDAR** provides data to three components in parallel:
-  - SLAM Engines (for mapping)
-  - Navigator (for wall-following & obstacle avoidance)
-  - Traffic Detector (for context)
+- **LiDAR** provides data to two components in parallel:
+  - SLAM engines (Hector SLAM / GMapping) for mapping and localization
+  - Navigator for wall-following and obstacle avoidance)
+- **RGB Camera** provides data to:
+  - Traffic Detector (OpenCV-based) for traffic sign recognition
+- **Traffic Detector** publishes navigation commands via:
+  - /traffic_sign topic (LEFT, RIGHT, STRAIGHT, PARK)
 - **Navigator** receives inputs from:
-  - LiDAR (`/front_laser/scan`) - obstacle detection
-  - Traffic signs (`/traffic_sign`) - navigation commands
-  - Odometry (`/odom`) - position tracking
-- Navigator uses **wall-following algorithm** with direct sensor feedback (no path planner)
-- SLAM provides mapping for visualization; navigator operates reactively
+  - LiDAR (/front_laser/scan) for obstacle detection and wall-following
+  - Traffic signs (/traffic_sign) for navigation commands
+- Navigator uses a reactive **wall-following algorithm** with direct sensor feedback:
+  - No global planner
+  - No predefined path
+  - Motion commands are generated directly as velocity outputs (/sim_p3at/cmd_vel)
+- **Odometry** is used implicitly through the TF framework:
+  - SLAM utilizes the odom -> base_link transform for localization
+  - Navigator operates independently of odometry data
+- **SLAM** modules operate in parallel with navigation:
+  - Generate a 2D occupancy grid map (/map)
+  - Provide localization through TF (map -> odom)
+  - Used for visualization and performance evaluation, not for navigation control
+
+
 
 ## 🤖 Hardware Specifications
 
