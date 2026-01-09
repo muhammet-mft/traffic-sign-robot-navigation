@@ -74,7 +74,7 @@ This project implements an autonomous navigation system for a Pioneer 3-AT mobil
     │ /laser_scan        │ /image_raw   │
     │                    │              │
     │            ┌───────▼──────────┐   │
-    ├───────────>│ Traffic Detector │   │
+    │            │ Traffic Detector │   │
     │            │  (OpenCV)        │   │
     │            └───────┬──────────┘   │
     │                    │              │
