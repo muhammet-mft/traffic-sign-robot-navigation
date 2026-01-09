@@ -1,0 +1,78 @@
+<launch>
+
+
+  <!-- 1) MODEL PATH SET       -->
+
+ 
+	<env name="GAZEBO_MODEL_PATH"
+     value="$(find amr-ros-config)/gazebo/models:$(env GAZEBO_MODEL_PATH)"/>
+
+
+
+
+  <!-- 2) URDF TO ROBOT DESCIRPTION -->
+
+
+  <param name="robot_description"
+         command="$(find xacro)/xacro --inorder $(find amr-ros-config)/description/urdf/pioneer3at_lidar_rgb.urdf" />
+
+
+  <!-- 2) ROBOT STATE PUBLISHER -->
+
+  <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher" output="screen"/>
+  
+  <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
+      <param name="use_gui" value="false"/>
+  </node>
+
+
+  <!-- 3) GAZEBO WORLD  -->
+
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+      <arg name="world_name" value="$(find amr-ros-config)/gazebo/final_Added.world"/>
+      <arg name="paused" value="false"/>  
+      <arg name="use_sim_time" value="true"/>
+  </include>
+
+
+  <!-- 4) ROBOT SPAWN            -->
+  
+  <node name="spawn_p3at"
+        pkg="gazebo_ros"
+        type="spawn_model"
+        args="-urdf -param robot_description -model pioneer3at -x -20.799 -y 14 -z 0.03"
+        output="screen"/>
+
+
+  <!-- 5) SENSORS TF       -->
+
+  <node pkg="tf2_ros" type="static_transform_publisher"
+        name="tf_lidar_rear"
+        args="-0.18 0 0.4 0 0 3.14159 base_link laser_rear_link" />
+
+  <node pkg="tf2_ros" type="static_transform_publisher"
+        name="tf_lidar_front"
+        args="0 0.18 0.4 0 0 0 base_link laser_front_link" />
+
+  <node pkg="tf2_ros" type="static_transform_publisher"
+        name="tf_camera"
+        args="0.2 0 0.45 0 0 0 base_link camera_link" />
+
+
+  <!-- 6) ROBOT MOVEMENT     -->
+
+<node pkg="amr-ros-config"
+      type="moveKeyboard.py"
+      name="keyboard_control"
+      output="screen"/>
+
+
+  <!-- 7) RVIZ                   -->
+
+  <node pkg="rviz" type="rviz" 
+
+   args="-d $(find amr-ros-config)/launch/Hw3Rviz.rviz"
+
+   name="rviz"/>
+</launch>
+

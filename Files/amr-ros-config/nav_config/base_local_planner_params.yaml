@@ -1,0 +1,32 @@
+TrajectoryPlannerROS:
+  # --- HIZ AYARLARI ---
+  max_vel_x: 0.35        # Biraz hızlandırdık
+  min_vel_x: 0.05
+  
+  # DÖNÜŞ HIZLARI (Artırıldı)
+  max_vel_theta: 0.8     # 0.5'ti -> 0.8 yaptık (Daha hızlı dönsün)
+  min_in_place_vel_theta: 0.5 # 0.3'tü -> 0.5 yaptık (Dönerken yavaşlamasın)
+  
+  # --- İVME AYARLARI (KRİTİK) ---
+  acc_lim_x: 0.3         # Şahlanmasın diye düşük (Dokunma!)
+  acc_lim_theta: 1.5     # 0.5'ti -> 1.5 yaptık! (Dönüşe fişek gibi başlasın)
+  acc_lim_y: 0.0
+
+  # --- DİĞER AYARLAR ---
+  escape_vel: -0.1
+  holonomic_robot: false
+  
+  sim_time: 1.5
+  vx_samples: 20
+  vtheta_samples: 40
+  
+  yaw_goal_tolerance: 0.20 # Toleransı biraz sıktık ki tam 90 derece dönsün
+  xy_goal_tolerance: 0.25
+  latch_xy_goal_tolerance: true
+
+  meter_scoring: true
+  path_distance_bias: 32.0
+  goal_distance_bias: 20.0
+  occdist_scale: 0.02
+  heading_lookahead: 0.325
+  dwa: false

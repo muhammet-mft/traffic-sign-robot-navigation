@@ -1,0 +1,14 @@
+material SignStraight/Diffuse
+{
+  technique
+  {
+    pass
+    {
+      texture_unit
+      {
+        texture straight.jpeg
+        scale 1 1
+      }
+    }
+  }
+}

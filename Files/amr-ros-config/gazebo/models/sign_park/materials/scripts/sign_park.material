@@ -1,0 +1,14 @@
+material SignPark/Diffuse
+{
+  technique
+  {
+    pass
+    {
+      texture_unit
+      {
+        texture park.jpeg
+        scale 1 1
+      }
+    }
+  }
+}

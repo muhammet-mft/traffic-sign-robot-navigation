@@ -1,0 +1,12 @@
+1) first launch the world with -> roslaunch amr-ros-config project_world.launch
+
+2) use reset robot -> rosrun amr-ros-config reset_robot.py
+
+3) open traffic sign detector -> rosrun amr-ros-config traffic_detector_2.py
+
+4) launch Gmapping SLAM -> roslaunch amr-ros-config slam_gmapping.launch
+
+Through RViz, Add->Map and the use topic /map to visualize mapping
+
+5) Start moving the robot by, rosrun amr-ros-config navigator_3.py
+

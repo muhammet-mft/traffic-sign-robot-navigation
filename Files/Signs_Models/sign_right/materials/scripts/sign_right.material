@@ -1,0 +1,14 @@
+material SignRight/Diffuse
+{
+  technique
+  {
+    pass
+    {
+      texture_unit
+      {
+        texture right.jpeg
+        scale 1 1
+      }
+    }
+  }
+}

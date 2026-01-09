@@ -1,0 +1,14 @@
+material SignLeft/Diffuse
+{
+  technique
+  {
+    pass
+    {
+      texture_unit
+      {
+        texture left.jpeg
+        scale 1 1
+      }
+    }
+  }
+}
