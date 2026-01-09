@@ -4,7 +4,7 @@
 
 A ROS-based autonomous mobile robot navigation system that uses computer vision for traffic sign detection and SLAM algorithms for mapping and localization in a simulated office environment.
 
-![Pioneer 3-AT Robot](https://via.placeholder.com/150x100?text=Pioneer+3-AT)
+> **Robot URDF Model**: [Pioneer 3-AT Description](https://github.com/MobileRobots/amr-ros-config/tree/master/description)
 
 ## 👥 Team Members
 - Yunus Emre Kuru
@@ -64,12 +64,12 @@ This project implements an autonomous navigation system for a Pioneer 3-AT mobil
 │              (AWS Office World + Pioneer 3-AT)              │
 └──────────────┬──────────────────────────────────────────────┘
                │
-    ┌──────────┴──────────┬──────────────┬───────────────┐
-    │                     │              │               │
-┌───▼────┐        ┌───────▼──────┐  ┌───▼────┐    ┌────▼────┐
-│ LiDAR  │        │  RGB Camera  │  │ Odom   │    │ Sonar   │
-│ F + R  │        │ (12.3 MP)    │  │        │    │         │
-└───┬────┘        └──────┬───────┘  └───┬────┘    └─────────┘
+    ┌──────────┴──────────┬──────────────┐
+    │                     │              │
+┌───▼────┐        ┌───────▼──────┐  ┌───▼────┐
+│ LiDAR  │        │  RGB Camera  │  │ Odom   │
+│ F + R  │        │ (12.3 MP)    │  │        │
+└───┬────┘        └──────┬───────┘  └───┬────┘
     │                    │              │
     │            ┌───────▼──────────┐   │
     │            │ Traffic Detector │   │
@@ -119,7 +119,6 @@ This project implements an autonomous navigation system for a Pioneer 3-AT mobil
 | **Front LiDAR** | 2D Laser Scanner<br>• 270° FOV<br>• 20m range<br>• 540 samples<br>• 0.5° resolution | Primary obstacle detection & SLAM |
 | **Rear LiDAR** | Same as front | Rear obstacle detection & complete coverage |
 | **RGB Camera** | Flir BlackflyS BFS-U3-122S6C-C<br>• 12.3 MP<br>• 23 FPS<br>• 60° FOV | Traffic sign detection |
-| **Sonar Arrays** | 8 sensors (front + back) | Short-range proximity sensing |
 | **Wheel Encoders** | Built-in | Odometry & dead reckoning |
 
 ### Simulation Environment
@@ -169,7 +168,7 @@ pip3 install rospy
 ```bash
 # Clone the repository
 cd ~/Desktop
-git clone https://github.com/YOUR_USERNAME/traffic-sign-robot-navigation.git
+git clone https://github.com/muhammet-mft/traffic-sign-robot-navigation.git
 cd traffic-sign-robot-navigation
 
 # Create catkin workspace (if needed)
@@ -288,11 +287,10 @@ RViz is automatically launched with the world. You can visualize:
 ```
 traffic-sign-robot-navigation/
 ├── README.md
-├── gmapping_haritam.pgm           # Generated GMapping map (4000×4000)
-├── hector_haritam.pgm             # Generated Hector map (2048×2048)
+├── gmapping_haritam.pgm           # Generated GMapping map (16 MB)
+├── hector_haritam.pgm             # Generated Hector map (4 MB)
 ├── Gmapping_Error.jpeg            # GMapping error logs
 ├── Hector_Error.jpeg              # Hector error logs
-├── WhatsApp Image...jpeg          # Project documentation
 │
 └── Files/
     ├── amr-ros-config/            # Main ROS package
@@ -351,7 +349,6 @@ traffic-sign-robot-navigation/
 |--------|----------|-------------|--------|
 | **Map Resolution** | 4000×4000 px | 2048×2048 px | GMapping |
 | **Map File Size** | 16 MB | 4 MB | Hector |
-| **Average Position Error** | ~0.778 m | ~0.038 m | **Hector** ✓ |
 | **Average RMSE** | ~0.403-0.409 | ~0.041 | **Hector** ✓ |
 | **Computational Load** | Medium | Low | **Hector** ✓ |
 | **Map Update Rate** | 1 Hz | Real-time | **Hector** ✓ |
@@ -370,11 +367,11 @@ traffic-sign-robot-navigation/
 - Higher computational cost (30 particles)
 - Requires good odometry
 - Slower map updates (1s intervals)
-- Higher localization error in our tests (~0.78m)
+- Higher RMSE in our tests (~0.403-0.409)
 
 #### Hector SLAM
 **Strengths:**
-- Excellent localization accuracy (~0.04m error)
+- Excellent localization accuracy (RMSE ~0.041)
 - No odometry required (scan-matching based)
 - Real-time map updates
 - Lower computational requirements
@@ -387,7 +384,7 @@ traffic-sign-robot-navigation/
 - Smaller map size limit
 
 ### Conclusion
-For this office environment navigation task, **Hector SLAM significantly outperformed GMapping** with ~20× better localization accuracy (0.038m vs 0.778m). Hector's scan-matching approach proved more suitable for structured indoor environments with good geometric features.
+For this office environment navigation task, **Hector SLAM significantly outperformed GMapping** with ~10× better RMSE (0.041 vs 0.403-0.409). Hector's scan-matching approach proved more suitable for structured indoor environments with good geometric features.
 
 ## 🚦 Traffic Sign Detection
 
@@ -440,13 +437,14 @@ elif detected_sign == "PARK":
 
 ## 🎥 Demo Videos
 
-*(Add your demo videos here after recording)*
+**📹 [View All Demo Videos on Google Drive](https://drive.google.com/drive/folders/1C9OPpHTNZPf5NemMt2ehJV0YITXUk2D9)**
 
-- [ ] Full autonomous exploration with GMapping
-- [ ] Full autonomous exploration with Hector SLAM
-- [ ] Traffic sign detection demo
-- [ ] Parking behavior demo
-- [ ] SLAM comparison visualization
+The demo folder includes:
+- ✅ Full autonomous exploration with GMapping
+- ✅ Full autonomous exploration with Hector SLAM
+- ✅ Traffic sign detection demo
+- ✅ Parking behavior demo
+- ✅ SLAM comparison visualization
 
 ## 🐛 Troubleshooting
 
@@ -531,6 +529,6 @@ This project was developed as an academic assignment. Feel free to use it for ed
 
 **Contact**: Team 10 Members (see above)
 
-**Institution**: [Your University Name]
+**Institution**: Istanbul Technical University
 
-**Course**: [Course Code and Name]
+**Course**: KON 414E - Principles of Robot Autonomy
