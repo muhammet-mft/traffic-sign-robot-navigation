@@ -71,7 +71,7 @@ This project implements an autonomous navigation system for a Pioneer 3-AT mobil
 │ F + R  │        │ (12.3 MP)    │  │        │
 └───┬────┘        └──────┬───────┘  └───┬────┘
     │                    │              │
-    │ /laser_scan        │ /image_raw   │
+    │/front_laser/scan   │ /image_raw   │
     │                    │              │
     │            ┌───────▼──────────┐   │
     │            │ Traffic Detector │   │
@@ -80,16 +80,20 @@ This project implements an autonomous navigation system for a Pioneer 3-AT mobil
     │                    │              │
     │                    │ /traffic_sign│
     │                    │              │
-    ├──────────>┌───────▼────┐         │
-    │           │    SLAM    │         │
-    │           │  Gmapping/ │◄──────  │
-    │           │   Hector   │         │
-    │           └──────┬─────┘         │
-    │                  │ /map          │
-    │                  │               │
-    └──────────>┌──────▼─────────┐     │
-                │   Navigator    │◄───┤
-                │(Wall-Following)│◄───┘ /odom
+    |            ┌───────▼────┐         │
+    │            │    SLAM    │         │
+    │──────────> │  Gmapping/ │◄──────  │
+    │            │   Hector   │         │
+    │            └──────┬─────┘         │
+    │                   │ /map          │
+    │                   │               │
+    |            ┌──────▼───────┐       |
+    |            |     Rviz     | ◄─────┤ 
+    |            └──────────────┘       |
+    |                                   |
+    └──────────>┌──────▼─────────┐      │
+                │   Navigator    │◄─────┤
+                │(Wall-Following)│◄─────┘ /odom
                 └────────┬───────┘
                          │ /sim_p3at/cmd_vel
                 ┌────────▼─────────┐
