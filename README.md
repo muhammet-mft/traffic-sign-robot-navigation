@@ -82,12 +82,12 @@ This project implements an autonomous navigation system for a Pioneer 3-AT mobil
     │                    │              │
     ├──────────>┌───────▼────┐         │
     │           │    SLAM    │         │
-    │           │  Gmapping/ │         │
+    │           │  Gmapping/ │◄──────  │
     │           │   Hector   │         │
     │           └──────┬─────┘         │
     │                  │ /map          │
     │                  │               │
-    └──────────>┌──────▼─────────┐    │
+    └──────────>┌──────▼─────────┐     │
                 │   Navigator    │◄───┤
                 │(Wall-Following)│◄───┘ /odom
                 └────────┬───────┘
