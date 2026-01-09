@@ -51,7 +51,7 @@ This project implements an autonomous navigation system for a Pioneer 3-AT mobil
 - **Autonomous Exploration**: Wall-following algorithm with dynamic obstacle avoidance
 - **Traffic Sign Recognition**: Real-time detection with 65% confidence threshold
 - **Dual SLAM Implementation**: Compare GMapping vs Hector SLAM performance
-- **Reactive Navigation**: Distance-based speed adjustment (0.1-0.35 m/s)
+- **Reactive Navigation**: Distance-based speed adjustment (0.15-0.55 m/s)
 - **Parking Mode**: Automated parking at 1.4m from detected obstacles
 - **Performance Metrics**: Real-time RMSE calculation against ground truth
 - **Multi-sensor Fusion**: Front/rear LiDAR + RGB camera + odometry
@@ -109,7 +109,7 @@ This project implements an autonomous navigation system for a Pioneer 3-AT mobil
 | **Dimensions** | 52cm (W) × 56cm (L) footprint |
 | **Mass** | 21.5 kg |
 | **Drive** | 4-wheel differential drive with skid steering |
-| **Max Linear Speed** | 0.35 m/s |
+| **Max Linear Speed** | 0.35 m/s (hardware limit)<br>0.15-0.55 m/s (software operational range) |
 | **Max Angular Speed** | 0.8 rad/s |
 
 ### Sensors
@@ -191,7 +191,7 @@ cp -r Files/amr-ros-config/gazebo/models/* ~/.gazebo/models/
 
 ## 🚀 Usage
 
-### Quick Start - Complete System
+### Quick Start - Complete System (with Hector SLAM)
 
 #### Terminal 1: Launch Gazebo World and Robot
 ```bash
@@ -208,17 +208,22 @@ rosrun amr-ros-config reset_robot.py
 rosrun amr-ros-config traffic_detector_2.py
 ```
 
-#### Terminal 4: Launch Navigation Stack with Hector SLAM
+#### Terminal 4: Launch Navigation Stack
 ```bash
 roslaunch amr-ros-config traffic_exploration.launch
 ```
 
-#### Terminal 5: Start Autonomous Navigator
+#### Terminal 5: Launch Hector SLAM
+```bash
+roslaunch amr-ros-config slam_hector.launch
+```
+
+#### Terminal 6: Start Autonomous Navigator
 ```bash
 rosrun amr-ros-config navigator_3.py
 ```
 
-#### Terminal 6 (Optional): Monitor Position Accuracy
+#### Terminal 7 (Optional): Monitor Position Accuracy
 ```bash
 rosrun amr-ros-config coordinate_viewer.py
 ```
@@ -319,7 +324,7 @@ traffic-sign-robot-navigation/
     │   │
     │   └── gazebo/               # Gazebo world and models
     │       ├── final_Added.world           # Main simulation world
-    │       └── models/                     # 44 custom models
+    │       └── models/                     # 44 models (signs, furniture, objects)
     │           ├── sign_left/
     │           ├── sign_right/
     │           ├── sign_straight/
@@ -347,8 +352,8 @@ traffic-sign-robot-navigation/
 
 | Metric | GMapping | Hector SLAM | Winner |
 |--------|----------|-------------|--------|
-| **Map Resolution** | 4000×4000 px | 2048×2048 px | GMapping |
-| **Map File Size** | 16 MB | 4 MB | Hector |
+| **Map Resolution** | 4000×4000 px | 2048×2048 px | **GMapping** ✓ |
+| **Map File Size** | 16 MB | 4 MB | Hector (more efficient) |
 | **Average RMSE** | ~0.403-0.409 | ~0.041 | **Hector** ✓ |
 | **Computational Load** | Medium | Low | **Hector** ✓ |
 | **Map Update Rate** | 1 Hz | Real-time | **Hector** ✓ |
@@ -422,21 +427,34 @@ For this office environment navigation task, **Hector SLAM significantly outperf
 
 ```python
 # From traffic_detector_2.py
-def detect_signs(image):
-    # Template matching for each sign type
-    for sign_name, template in templates.items():
-        result = cv2.matchTemplate(image, template, cv2.TM_CCOEFF_NORMED)
-        _, max_val, _, max_loc = cv2.minMaxLoc(result)
+def image_callback(self, data):
+    # Convert ROS Image to OpenCV format
+    cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
+    gray_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2GRAY)
 
-        if max_val >= 0.65:  # Confidence threshold
-            return sign_name
-    return None
+    detected_sign = "NONE"
+    max_val_all = 0
+
+    # Template matching for each sign type
+    for name, template in self.templates.items():
+        res = cv2.matchTemplate(gray_image, template, cv2.TM_CCOEFF_NORMED)
+        _, max_val, _, max_loc = cv2.minMaxLoc(res)
+
+        if max_val > 0.65:  # Confidence threshold
+            if max_val > max_val_all:
+                max_val_all = max_val
+                detected_sign = name
+
+    if detected_sign != "NONE":
+        self.sign_pub.publish(detected_sign)
 ```
 
 ### Navigation Response
 
+**Note**: The code below is simplified pseudocode for illustration. The actual implementation in `navigator_3.py` includes additional logic for LiDAR-based distance checking, turn duration control (3 seconds), stored command management, and real-time obstacle avoidance.
+
 ```python
-# From navigator_3.py
+# From navigator_3.py (Simplified)
 if detected_sign == "LEFT":
     turn_left()
 elif detected_sign == "RIGHT":
