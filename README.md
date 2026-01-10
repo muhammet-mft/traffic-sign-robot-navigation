@@ -427,8 +427,6 @@ traffic-sign-robot-navigation/
 
 | Metric | GMapping | Hector SLAM | Winner |
 |--------|----------|-------------|--------|
-| **Map Resolution** | 4000×4000 px | 2048×2048 px | **GMapping** ✓ |
-| **Map File Size** | 16 MB | 4 MB | Hector (more efficient) |
 | **Average RMSE** | ~0.403-0.409 | ~0.041 | **Hector** ✓ |
 | **Computational Load** | Medium | Low | **Hector** ✓ |
 | **Map Update Rate** | 1 Hz | Dynamic | **Hector** ✓ |
